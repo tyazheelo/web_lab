@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../styles/general.css">
+    <title><%= title %>></title>
+</head>
+<body>
+<header>
+    <div id="title-block">
+        <h1><%= title%></h1>
+        <hr>
+    </div>
+    <div id="navigation-block">
+        <nav>
+            <ul class = "nav-links">
+                <li><a id="to-main-page">Главная</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+<main>
+    <div id="content-block">
+        <div id="chat-block">
+            <div id="sidebar-block">
+                <div id ="current-user-block">
+                    <h5 id="current-name"><%= username%></h5>
+                </div>
+                <div id="user-list">
+
+                </div>
+            </div>
+            <div id="main-chat-block">
+                <div id="chat-header">
+                    <h5 id="companion-name"></h5>
+                </div>
+                <div id="chat"></div>
+                <div class="message-input-block">
+                    <div class="input-group">
+                        <input type="text" id="messageInput" placeholder="Введите сообщение или перетащите файл...">
+                        <button type="button" id="attachBtn" class="btn">📎</button>
+                        <button type="button" id="sendBtn" class="btn">📨 Отправить</button>
+                    </div>
+                    <input type="file" id="fileInput" style="display: none;" multiple>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>
