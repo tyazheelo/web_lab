@@ -1,0 +1,150 @@
+#form-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+#toy-form-block {
+    background: rgb(246, 243, 220);
+    padding: 30px;
+    border-radius: 10px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    margin: auto;
+}
+
+#toy-form {
+    width: 100%;
+}
+
+#form-group {
+    margin-bottom: 25px;
+}
+
+.form-item {
+    margin-bottom: 20px;
+}
+
+.form-item label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: rgb(105, 81, 71);
+    font-size: 14px;
+}
+
+.form-item input,
+.form-item select,
+.form-item textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    font-family: inherit;
+    box-sizing: border-box;
+    transition: border-color 0.3s;
+}
+
+.form-item input:focus,
+.form-item select:focus,
+.form-item textarea:focus {
+    outline: none;
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.2);
+}
+
+.form-item textarea {
+    height: 100px;
+    resize: vertical;
+}
+
+.form-item input:invalid:focus,
+.form-item select:invalid:focus {
+    border-color: #f44336;
+}
+
+#form-btns {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+#form-btns button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: all 0.3s;
+}
+
+#add-btn {
+    background-color: rgb(245, 220, 235);
+    color: rgb(105, 81, 71);
+}
+
+#add-btn:hover {
+    background-color: rgb(255, 205, 212);
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+#submit-btn {
+    display: none;
+    background-color: rgb(245, 220, 235);
+    color: rgb(105, 81, 71);
+}
+
+#submit-btn:hover {
+    background-color: rgb(255, 205, 212);
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+#cancel-btn {
+    background-color: rgb(245, 220, 235);
+    color: rgb(105, 81, 71);
+}
+
+#cancel-btn:hover {
+    background-color: rgb(255, 205, 212);
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+#form-btns button:active {
+    transform: translateY(0);
+}
+
+@media (max-width: 600px) {
+    #toy-form-block {
+        padding: 20px;
+        width: 95%;
+    }
+    
+    #form-btns {
+        flex-direction: column;
+    }
+    
+    #form-btns button {
+        width: 100%;
+    }
+    
+    .form-item input,
+    .form-item select,
+    .form-item textarea {
+        padding: 8px;
+    }
+}

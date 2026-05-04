@@ -1,0 +1,97 @@
+@import url(https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@100..900&display=swap);
+
+html{
+    background-image: url(../images/kid-wallpaper.png);
+    font-family: 'Roboto Slab', serif;
+}
+
+body{
+    padding: 3% 6%;
+    margin: 6% 10%;
+    background-color: rgb(251, 248, 255);
+    border-style: solid;
+    border-radius: 15px;
+    border-color: rgb(242, 215, 133);
+    color: rgb(105, 81, 71)
+    
+}
+
+body button{
+    transition: all 0.3s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+#title-block h1{
+    text-align: center;
+}
+
+#title-block hr{
+    margin: 0% 4%;
+    background-color: rgb(242, 215, 133);
+    height: 3px;
+    border: none;
+}
+
+#content-block{
+    margin-top: 2%;
+    margin-bottom: 6%;
+    padding: 3% 10% 6% 10%;
+    background-color: rgb(246, 243, 220);
+    border-radius: 15px;
+    border-style: solid;
+    border-color: rgb(242, 215, 133);
+    font-size: 18px;
+}
+
+.chapter-divider{
+    background-color: rgb(105, 81, 71);
+    height: 2px;
+    border: none;
+    margin-top: 4%;
+    margin-bottom: 5%;
+}
+
+#navigation-block{
+    width: auto;
+    margin-top: 2%;
+    background-color: rgb(245, 220, 235);
+    font-size: 20px;
+    border-radius: 15px;
+    border-style: solid;
+    border-color: rgb(242, 215, 133);
+    display: flex;
+    justify-content: space-around;
+}
+
+#navigation-block ul{
+    list-style-type: none;
+    column-count: 2;
+    column-gap: 80px;
+}
+
+#navigation-block a{
+    text-decoration: none;
+    color: rgb(105, 81, 71);
+    font-weight: bold;
+    padding: 5px 20px;
+}
+
+#navigation-block a:hover{
+    background-color: rgb(255, 205, 212);
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+@media(max-width: 800px)
+{
+    #title-block h1{
+        font-size: 24px;
+    }
+    #content-block{
+        font-size: 15px;
+    }
+        #navigation-block{
+        font-size: 18px;
+    }
+}

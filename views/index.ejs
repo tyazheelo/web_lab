@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../styles/general.css">
+    <link rel="stylesheet" href="../styles/main-page.css">
+    <link rel="stylesheet" href="../styles/catalog.css">
+    <link rel="stylesheet" href="../styles/form.css">
+    <title><%= title %>></title>
+</head>
+<body>
+    <header>
+        <div id="title-block">
+            <h1><%= title%></h1>
+            <hr>
+        </div>
+        <div id="navigation-block">
+            <nav>
+                <ul class = "nav-links">
+                    <li><a id="to-catalog">Каталог</a></li>
+                    <li><a id="to-about-us">О нас</a></li>
+                    <li><a id="to-chat">Чат</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    <main>
+        <div id="content-block">
+            <div id = "catalog-regulator">
+                <button id="catalog-regulator-add-btn" type="button">Добавить</button>
+                <select id="sorting">
+                    <option value="by-category">По категории</option>
+                    <option value="by-alpha">А-Я</option>
+                    <option value="by-rev-alpha">Я-А</option>
+                    <option value="by-cost">По стоимости</option>
+                </select>
+                <input type="text" id="filtrate-by-name" placeholder="Поиск">
+
+            </div>
+            <div id="inner-content-block"></div>
+            <div id="page-navigation-block">
+                <button type="button" id="back-btn">Назад</button>
+                <span id="page-info">Страница 1 из 1</span>
+                <button type="button" id="next-btn">Вперед</button>
+            </div>
+        </div>
+        <div id="form-overlay">
+            <div id="toy-form-block">
+                <form id="toy-form">
+                    <div id="form-group">
+                        <div class="form-item">
+                        <label>Название: </label>
+                        <input type = "text" id="name" required>
+                        </div>
+                        <div class="form-item">
+                            <label>Стоимость: </label>
+                            <input type = "number" id="cost" required>
+                        </div>
+                        <div class="form-item">
+                            <label>Тип: </label>
+                            <select id="type" required>
+                                <option value="Эко-игрушки">Эко-игрушки</option>
+                                <option value="Развивающие игрушки">Развивающие игрушки</option>
+                            </select>
+                        </div>
+                        <div class="form-item">
+                            <label>Описание: </label>
+                            <textarea id="description"></textarea>
+                        </div>
+                    </div>
+                    <div id="form-btns">
+                        <button type="submit" id="add-btn">Добавить</button>
+                        <button type="submit" id="submit-btn">Сохранить</button>
+                        <button type="button" id="cancel-btn">Отмена</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+    <script type="module" src="/js/content-regulator.js"></script>
+    <script type = "module" src="/js/items-editing.js"></script>
+</body>
+</html>
