@@ -163,8 +163,8 @@ function DisplayItems(items) {
         content += `<p>${escapeHtml(item.description || '')}</p>`;
         content += '</div>';
         content += "<div class='edit-block'>";
-        content += `<button type='button' class='item-change-btn' id='${item.id}'>Редактировать</button>`;
-        content += `<button type='button' class='item-delete-btn' id='${item.id}'>Удалить</button>`;
+        content += `<button type='button' class='item-change-btn btn' id='${item.id}'>Редактировать</button>`;
+        content += `<button type='button' class='item-delete-btn btn' id='${item.id}'>Удалить</button>`;
         content += "</div>";
         content += '</div>';
     });
