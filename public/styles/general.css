@@ -58,14 +58,16 @@ body button{
     border-radius: 15px;
     border-style: solid;
     border-color: rgb(242, 215, 133);
-    display: flex;
-    justify-content: space-around;
 }
 
 #navigation-block ul{
+    padding: 0;
     list-style-type: none;
     column-count: 2;
-    column-gap: 80px;
+    column-gap: 60px;
+    display: flex;
+    justify-content: space-evenly;
+    width: auto;
 }
 
 #navigation-block a{
