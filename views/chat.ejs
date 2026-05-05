@@ -38,16 +38,17 @@
                 <div id="chat"></div>
                 <div class="message-input-block">
                     <div class="input-group">
-                        <input type="text" id="messageInput" placeholder="Введите сообщение или перетащите файл...">
-                        <button type="button" id="attachBtn" class="btn">📎</button>
-                        <button type="button" id="sendBtn" class="btn">📨 Отправить</button>
+                        <input type="text" id="message-input" placeholder="Введите сообщение или перетащите файл...">
+                        <button type="button" id="attach-btn" class="btn">📎</button>
+                        <button type="button" id="send-btn" class="btn">📨 Отправить</button>
                     </div>
-                    <input type="file" id="fileInput" style="display: none;" multiple>
+                    <input type="file" id="file-input" style="display: none;" multiple>
                 </div>
             </div>
         </div>
     </div>
 </main>
+<script src="/socket.io/socket.io.js"></script>
 <script type = "module" src="/js/chat.js"></script>
 </body>
 </html>

@@ -43,20 +43,6 @@
     justify-content: space-evenly;
 }
 
-#catalog-regulator-add-btn, 
-.item-change-btn, 
-.item-delete-btn,
-#back-btn, 
-#next-btn{
-    background-color: rgb(245, 220, 235);
-    color: rgb(105, 81, 71);
-    font-weight: bold;
-    border: 1px solid pink;
-    border-radius: 15px;
-
-    cursor: pointer;
-}
-
 #catalog-regulator-add-btn{
     margin-right: 10px;
     padding: 0px 10px;
@@ -141,10 +127,7 @@
     font-size: 16px;    
     padding: 10px 15px;
 }
-#back-btn:hover, 
-#next-btn:hover,
-.item-change-btn:hover,
-.item-delete-btn:hover,
+.btn:hover,
 #filtrate-by-name:hover,
 #sorting:hover
 {
