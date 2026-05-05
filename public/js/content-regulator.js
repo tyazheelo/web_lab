@@ -2,6 +2,7 @@ import { SetButtonBehaviour, SetRefreshCatalogCallback } from './items-editing.j
 
 const ToCatalogNavId = 'to-catalog';
 const ToAboutUsNavId = 'to-about-us';
+const ToChatNavId = 'to-chat';
 
 const ContentBLockId = 'inner-content-block';
 
@@ -27,6 +28,7 @@ SetRefreshCatalogCallback(() => LoadAndDisplayCatalog());
 (async function() {
     const toCatalog = document.getElementById(ToCatalogNavId);
     const toAboutUs = document.getElementById(ToAboutUsNavId);
+    const toChat = document.getElementById(ToChatNavId);
     const sortSelect = document.getElementById(SortingSelectId);
     const searchInput = document.getElementById(FiltrateInputId);
     const backBtn = document.getElementById('back-btn');
@@ -82,10 +84,15 @@ SetRefreshCatalogCallback(() => LoadAndDisplayCatalog());
         event.preventDefault();
         event.stopPropagation();
 
-        // Скрываем блоки для раздела "О нас"
         showAboutUsLayout();
         
         await SetAboutUs(AboutUsHTML);
+    });
+
+    toChat.addEventListener('click', async function(event) {
+        event.preventDefault();
+
+        window.location.href = '/chat';
     });
 }());
 
@@ -249,8 +256,8 @@ function Sort(items, sortType){
                 if (a.type !== b.type) {
                     return a.type.localeCompare(b.type);
                 }
-                const [typeA, numA] = a.id.split('-');
-                const [typeB, numB] = b.id.split('-');
+                const [, numA] = a.id.split('-');
+                const [, numB] = b.id.split('-');
                 return parseInt(numA, 10) - parseInt(numB, 10);
             });
         case "by-alpha": 

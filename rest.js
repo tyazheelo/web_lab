@@ -20,6 +20,15 @@ app.get('/', (req, res) =>{
     }
 });
 
+app.get('/chat', (req, res) => {
+    try{
+        res.render('chat.ejs', {title: "Магазин игрушек", username: req.user?.username || 'Guest'});
+    }
+    catch{
+        res.sendStatus(404);
+    }
+});
+
 app.get('/api/items', async (req, res) => {
     try{
         const items = await getAll();
