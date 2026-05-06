@@ -1,6 +1,8 @@
 import express from 'express'
 import bodyParser from 'body-parser'
-import { getAll, getById, addToy, updateToy, deleteToyById } from './store.js';
+import {getById, addToy, updateToy, deleteToyById, filename } from './js/toy-store.js';
+import {getAll} from './js/store.js';
+import {addUser, isPasswordCorrect} from './js/user-store.js';
 
 
 const app = express();
@@ -22,7 +24,7 @@ app.get('/', (req, res) =>{
 
 app.get('/chat', (req, res) => {
     try{
-        res.render('chat.ejs', {title: "Магазин игрушек", username: req.user?.username || 'Guest'});
+        res.render('chat.ejs', {title: "Магазин игрушек"});
     }
     catch{
         res.sendStatus(404);
@@ -31,7 +33,7 @@ app.get('/chat', (req, res) => {
 
 app.get('/api/items', async (req, res) => {
     try{
-        const items = await getAll();
+        const items = await getAll(filename);
         res.json(items);
     }
     catch{
@@ -52,11 +54,8 @@ app.get('/api/items/:id', async (req, res) => {
     }
 });
 
-//curl -X POST http://localhost:3000/api/items -H "Content-Type: application/json" -d "{\"name\":\"Моя игрушка\",\"cost\":250,\"type\":\"Эко-игрушки\"}"
-
 app.post('/api/items', async (req, res) => {
     try{
-        const { name, cost, type, description } = req.body;
         await addToy(req.body);
         res.sendStatus(201);
     }
@@ -65,7 +64,7 @@ app.post('/api/items', async (req, res) => {
         res.sendStatus(400);
     }
 });
-//curl -X PUT http://localhost:3000/api/items/eco-3 -H "Content-Type: application/json" -d "{\"name\": \"Тедди\"}"
+
 app.put('/api/items/:id', async(req, res) => {
     try{
         const id = req.params.id;
@@ -79,8 +78,6 @@ app.put('/api/items/:id', async(req, res) => {
     }
 });
 
-//curl -X DELETE http://localhost:3000/api/items/eco-3
-
 app.delete('/api/items/:id', async(req,res) => {
     try
     {
@@ -93,4 +90,24 @@ app.delete('/api/items/:id', async(req,res) => {
     }
 });
 
+app.post('/api/users/register', async (req, res) => {
+   try{
+        await addUser(req.body);
+        res.sendStatus(201);
+   }
+   catch(error)
+   {
+       res.status(400).json({success: false, message: error.message});
+   }
+});
+
+app.post('/api/users/login', async(req, res) => {
+    try{
+        await isPasswordCorrect(req.body);
+        res.status(200).json({success: true, message: 'Login successful'});
+    }
+    catch (error) {
+        res.status(401).json({success: false, message: error.message});
+    }
+});
 export { app };

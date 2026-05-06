@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../styles/general.css">
+    <link rel="stylesheet" href="../styles/chat.css">
     <title><%= title %>></title>
 </head>
 <body>
@@ -22,10 +23,51 @@
 </header>
 <main>
     <div id="content-block">
+        <div id="authorisation-block">
+            <div id="auth-btn">
+                <button id="log-in-btn" class="btn">Войти</button>
+                <button id="registration-btn" class="btn">Регистрация</button>
+            </div>
+            <div id="log-in-block">
+                <form>
+                    <h3>Войти</h3>
+                    <div class="username-block">
+                        <label>Имя пользователя</label>
+                        <input type="text" id="username-input">
+                    </div>
+                    <div class="password-block">
+                        <label>Пароль</label>
+                        <input type="password" id="password-input">
+                    </div>
+                    <div>
+                        <button type="submit" class="btn" id="submit-login-btn">Подтвердить</button>
+                        <button type="button" class="cancel-btn btn">Отмена</button>
+                    </div>
+                </form>
+            </div>
+            <div id="registration-block">
+                <form>
+                    <h3>Регистрация</h3>
+                    <div class="username-block">
+                        <label>Имя пользователя</label>
+                        <input type="text" id="username-input">
+                    </div>
+                    <div class="password-block">
+                        <label>Пароль</label>
+                        <input type="password" id="password-input">
+                        <input type="password" id="password-input-submit">
+                    </div>
+                    <div>
+                        <button type="submit" class="btn" id="submit-reg-btn">Подтвердить</button>
+                        <button type="button" class="cancel-btn btn">Отмена</button>
+                    </div>
+                </form>
+            </div>
+        </div>
         <div id="chat-block">
             <div id="sidebar-block">
                 <div id ="current-user-block">
-                    <h5 id="current-name"><%= username%></h5>
+                    <h5 id="current-name"></h5>
                 </div>
                 <div id="user-list">
 
@@ -39,10 +81,10 @@
                 <div class="message-input-block">
                     <div class="input-group">
                         <input type="text" id="message-input" placeholder="Введите сообщение или перетащите файл...">
-                        <button type="button" id="attach-btn" class="btn">📎</button>
-                        <button type="button" id="send-btn" class="btn">📨 Отправить</button>
+                        <button type="button" id="attach-btn" class="btn">Выбрать</button>
+                        <button type="button" id="send-btn" class="btn">Отправить</button>
                     </div>
-                    <input type="file" id="file-input" style="display: none;" multiple>
+                    <input type="file" id="file-input" multiple>
                 </div>
             </div>
         </div>
@@ -50,5 +92,6 @@
 </main>
 <script src="/socket.io/socket.io.js"></script>
 <script type = "module" src="/js/chat.js"></script>
+<script type = "module" src="/js/authentication.js"></script>
 </body>
 </html>
