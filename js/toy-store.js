@@ -1,35 +1,21 @@
-import fs from 'node:fs/promises';
+import {getAll, save} from "./store.js";
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const filename = path.join(__dirname, path.join('database', 'db.json'));
-
-
-const save = async (data) => {
-    await fs.writeFile(filename, JSON.stringify(data, null, 2));
-};
-
-const readData = async () => {
-    const data = await fs.readFile(filename, 'utf-8');
-    return JSON.parse(data);
-};
-
-const getAll = async () => {
-    const data = await readData();
-    return data || [];
-};
+const rootDir = path.join(__dirname, '..');
+const filename = path.join(rootDir, 'database', 'toys.json');
 
 const getById = async (id) => {
-    const items = await getAll();
+    const items = await getAll(filename);
     return items.find(item => item.id === id);
 };
 
 const addToy = async (itemData) => {
     const { name, cost, type, description } = itemData;
-    const items = await getAll();
+    const items = await getAll(filename);
     const id = await generateNewId(type, items);
     
     const newItem = {
@@ -43,8 +29,8 @@ const addToy = async (itemData) => {
     items.push(newItem);
     
     items.sort((a, b) => {
-        const [typeA, numA] = a.id.split('-');
-        const [typeB, numB] = b.id.split('-');
+        const [, numA] = a.id.split('-');
+        const [, numB] = b.id.split('-');
         
         if (a.type !== b.type) {
             return b.type.localeCompare(a.type);
@@ -52,11 +38,11 @@ const addToy = async (itemData) => {
         return parseInt(numA, 10) - parseInt(numB, 10);
     });
     
-    await save(items);
+    await save(items, filename);
 };
 
 const updateToy = async (id, updatedFields) => {
-    const items = await getAll();
+    const items = await getAll(filename);
     const index = items.findIndex(item => item.id === id);
     
     if (index === -1) {
@@ -64,11 +50,11 @@ const updateToy = async (id, updatedFields) => {
     }
     
     items[index] = { ...items[index], ...updatedFields };
-    await save(items);
+    await save(items, filename);
 };
 
 const deleteToyById = async (id) => {
-    const items = await getAll();
+    const items = await getAll(filename);
     const index = items.findIndex(item => item.id === id);
     
     if (index === -1) {
@@ -76,7 +62,7 @@ const deleteToyById = async (id) => {
     }
     
     items.splice(index, 1);
-    await save(items);
+    await save(items, filename);
 };
 
 const generateNewId = async (type, items) => {
@@ -108,9 +94,9 @@ const getShortType = (type) =>
     }
 }
 export {
-    getAll,
     getById,
     addToy,
     updateToy,
-    deleteToyById
+    deleteToyById,
+    filename
 };
