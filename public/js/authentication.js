@@ -1,4 +1,6 @@
-const currentUser = document.getElementById('current-name');
+let currentUsername;
+
+const currentUserHeader = document.getElementById('current-name');
 
 const cancelBtnClass = "cancel-btn";
 const registrationBlockId = "registration-block";
@@ -93,7 +95,9 @@ const chatBlock = document.getElementById('chat-block');
                 alert("Вы успешно зарегистрировались!");
                 registrationBlock.style.display = 'none';
                 chatBlock.style.display = 'flex';
-                currentUser.innerText= username;
+                currentUserHeader.innerText= username;
+
+                currentUsername = username;
             } else {
                 const errorData = await registerResponse.json();
                 alert(errorData.message);
@@ -134,7 +138,9 @@ const chatBlock = document.getElementById('chat-block');
             if (loginResponse.ok) {
                 logInBlock.style.display = 'none';
                 chatBlock.style.display = 'flex';
-                currentUser.innerText= username;
+                currentUserHeader.innerText= username;
+
+                currentUsername = username;
             } else {
                 const errorData = await loginResponse.json();
                 alert(errorData.message);
@@ -145,3 +151,7 @@ const chatBlock = document.getElementById('chat-block');
         }
     })
 }());
+
+export{
+    currentUsername,
+}
