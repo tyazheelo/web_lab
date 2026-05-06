@@ -127,8 +127,6 @@ async function loadItemForEditing(itemId) {
             const newType = typeSelect.value;
             const newDescription = descriptionTextArea.value;
             
-            console.log('Добавление товара:', { newName, newCost, newType, newDescription });
-            
             if (!newName || !newType) {
                 alert('Заполните название и тип товара');
                 return;
@@ -208,7 +206,7 @@ async function loadItemForEditing(itemId) {
                 });
                 
                 if (response.ok) {
-                    FormReset();  // Сбросит режим на "добавление"
+                    FormReset();
                     formOverlay.style.display = "none";
                     if (refreshCatalogCallback) await refreshCatalogCallback();
                     alert('Товар успешно обновлен');
