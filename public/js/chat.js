@@ -40,7 +40,11 @@ window.socket.on('connect', () => {
 
 window.socket.on('user:register:success', (data) => {
     console.log('✅ Registered as:', data.username, 'isAdmin:', data.isAdmin);
+
     if (!isCurrentUserAdmin) {
+        // Для обычного пользователя - админ выбран по умолчанию
+        currentRecipient = 'Admin';
+        console.log('📌 Default recipient set to: Admin');
         companionNameSpan.textContent = 'Чат с поддержкой';
         companionNameSpan.style.color = '#e91e63';
     }
@@ -277,14 +281,23 @@ function markMessagesAsRead(username) {
 function sendMessage() {
     const message = messageInput.value.trim();
     if (message === '') return;
-    if (isCurrentUserAdmin && !currentRecipient) {
-        alert('Выберите пользователя из списка для ответа');
+
+    // Для обычного пользователя, если recipient не выбран - отправляем админу
+    let targetRecipient = currentRecipient;
+    if (!isCurrentUserAdmin && !targetRecipient) {
+        targetRecipient = 'Admin';
+        console.log('No recipient, defaulting to Admin');
+    }
+
+    if (!targetRecipient) {
+        alert('Нет получателя');
         return;
     }
-    console.log('Sending message to:', currentRecipient);
+
+    console.log('Sending message to:', targetRecipient);
     window.socket.emit('chat:text', {
         content: message,
-        recipientUsername: currentRecipient
+        recipientUsername: targetRecipient
     });
     messageInput.value = '';
 }
@@ -294,8 +307,15 @@ function sendFiles(files) {
     console.log('isCurrentUserAdmin:', isCurrentUserAdmin);
     console.log('currentRecipient:', currentRecipient);
 
-    if (isCurrentUserAdmin && !currentRecipient) {
-        alert('Сначала выберите пользователя из списка!');
+    // Для обычного пользователя, если recipient не выбран - отправляем админу
+    let targetRecipient = currentRecipient;
+    if (!isCurrentUserAdmin && !targetRecipient) {
+        targetRecipient = 'Admin';
+        console.log('No recipient, defaulting to Admin');
+    }
+
+    if (!targetRecipient) {
+        alert('Нет получателя');
         return;
     }
 
@@ -313,12 +333,12 @@ function sendFiles(files) {
                 alert('Ошибка чтения файла');
                 return;
             }
-            console.log(`Sending file: ${file.name} to ${currentRecipient}`);
+            console.log(`Sending file: ${file.name} to ${targetRecipient}`);
             window.socket.emit('chat:file', {
                 fileName: file.name,
                 fileData: fileData,
                 fileType: file.type,
-                recipientUsername: currentRecipient
+                recipientUsername: targetRecipient
             });
         };
         reader.onerror = (error) => {
