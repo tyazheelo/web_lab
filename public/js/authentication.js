@@ -1,4 +1,5 @@
-let currentUsername;
+let currentUsername = null;
+let isCurrentUserAdmin = false;
 
 const currentUserHeader = document.getElementById('current-name');
 
@@ -18,140 +19,206 @@ const submitLogInBtn = document.getElementById('submit-login-btn');
 
 const chatBlock = document.getElementById('chat-block');
 
+function initChatWithUser(username, isAdmin) {
+    currentUsername = username;
+    isCurrentUserAdmin = isAdmin;
+
+    if (currentUserHeader) {
+        currentUserHeader.innerText = username;
+        if (isAdmin) {
+            currentUserHeader.style.color = '#e91e63';
+            currentUserHeader.title = 'Администратор';
+        }
+    }
+
+    if (chatBlock) {
+        chatBlock.style.display = 'flex';
+    }
+
+    if (window.socket) {
+        window.socket.emit('user:register', {
+            username,
+            password: isAdmin ? 'admin' : '',
+            isAdminLogin: isAdmin
+        });
+    } else {
+        const checkSocket = setInterval(() => {
+            if (window.socket) {
+                clearInterval(checkSocket);
+                window.socket.emit('user:register', {
+                    username,
+                    password: isAdmin ? 'admin' : '',
+                    isAdminLogin: isAdmin
+                });
+            }
+        }, 100);
+    }
+}
+
+function hideAuthForms() {
+    const authBtnsBlock = document.getElementById('auth-btns-block');
+    if (authBtnsBlock) authBtnsBlock.style.display = 'none';
+    if (logInBlock) logInBlock.style.display = 'none';
+    if (registrationBlock) registrationBlock.style.display = 'none';
+}
+
 (function (){
-    logInBtn.addEventListener('click', () => {
-        logInBtn.style.display = 'none';
-        registrationBtn.style.display = 'none';
+    if (logInBtn) {
+        logInBtn.addEventListener('click', () => {
+            logInBtn.style.display = 'none';
+            registrationBtn.style.display = 'none';
+            logInBlock.style.display = 'flex';
+        });
+    }
 
-        logInBlock.style.display = 'flex';
-    });
+    if (registrationBtn) {
+        registrationBtn.addEventListener('click', () => {
+            logInBtn.style.display = 'none';
+            registrationBtn.style.display = 'none';
+            registrationBlock.style.display = 'flex';
+        });
+    }
 
-    registrationBtn.addEventListener('click', () => {
-        logInBtn.style.display = 'none';
-        registrationBtn.style.display = 'none';
+    if (cancelLoginBtn) {
+        cancelLoginBtn.addEventListener('click', () => {
+            logInBlock.style.display = 'none';
+            logInBtn.style.display = 'block';
+            registrationBtn.style.display = 'block';
+            const loginInputs = logInBlock.querySelectorAll('input');
+            loginInputs.forEach(input => input.value = '');
+        });
+    }
 
-        registrationBlock.style.display = 'flex';
-    });
-    cancelLoginBtn.addEventListener('click', () => {
-        logInBlock.style.display = 'none';
+    if (cancelRegBtn) {
+        cancelRegBtn.addEventListener('click', () => {
+            registrationBlock.style.display = 'none';
+            logInBtn.style.display = 'block';
+            registrationBtn.style.display = 'block';
+            const regInputs = registrationBlock.querySelectorAll('input');
+            regInputs.forEach(input => input.value = '');
+        });
+    }
 
-        logInBtn.style.display = 'block';
-        registrationBtn.style.display = 'block';
+    if (submitRegBtn) {
+        submitRegBtn.addEventListener('click', async (event) => {
+            event.preventDefault();
 
-        const loginInputs = logInBlock.querySelectorAll('input');
-        loginInputs.forEach(input => input.value = '');
-    });
+            const usernameInput = document.querySelector(`#${registrationBlockId} #username-input`);
+            const passwordInput = document.querySelector(`#${registrationBlockId} #password-input`);
+            const passwordInputSubmit = document.querySelector(`#${registrationBlockId} #password-input-submit`);
 
-    cancelRegBtn.addEventListener('click', () => {
-        registrationBlock.style.display = 'none';
-
-        logInBtn.style.display = 'block';
-        registrationBtn.style.display = 'block';
-
-        const regInputs = registrationBlock.querySelectorAll('input');
-        regInputs.forEach(input => input.value = '');
-    });
-
-    submitRegBtn.addEventListener('click', async (event) => {
-        event.preventDefault();
-
-        const usernameInput = document.querySelector(`#${registrationBlockId} #username-input`);
-        const passwordInput = document.querySelector(`#${registrationBlockId} #password-input`);
-        const passwordInputSubmit = document.querySelector(`#${registrationBlockId} #password-input-submit`);
-
-        if(!usernameInput || !passwordInputSubmit || !passwordInput) {
-            console.error('Элементы формы не найдены');
-            alert('Ошибка: не найдены поля формы');
-            return;
-        }
-
-        const username = usernameInput.value.trim();
-        const password = passwordInput.value.trim();
-        const passwordSubmit = passwordInputSubmit.value.trim();
-
-        if(!username || !password || !passwordSubmit) {
-            alert('Заполните все поля!');
-            return;
-        }
-
-        if(password !== passwordSubmit) {
-            alert('Пароли должны совпадать!');
-            return;
-        }
-
-        try {
-            const registerResponse = await fetch('/api/users/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    username: username,
-                    password: password
-                })
-            });
-
-            if (registerResponse.ok) {
-                alert("Вы успешно зарегистрировались!");
-                registrationBlock.style.display = 'none';
-                chatBlock.style.display = 'flex';
-                currentUserHeader.innerText= username;
-
-                currentUsername = username;
-            } else {
-                const errorData = await registerResponse.json();
-                alert(errorData.message);
+            if(!usernameInput || !passwordInputSubmit || !passwordInput) {
+                alert('Ошибка: не найдены поля формы');
+                return;
             }
-        } catch (err) {
-            console.error('Ошибка:', err);
-            alert(err.message);
-        }
-    });
 
-    submitLogInBtn.addEventListener('click', async (event) => {
-        event.preventDefault();
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+            const passwordSubmit = passwordInputSubmit.value.trim();
 
-        const usernameInput = document.querySelector(`#${loginBlockId} #username-input`);
-        const passwordInput = document.querySelector(`#${loginBlockId} #password-input`);
-
-        if(!usernameInput || !passwordInput) {
-            console.error('Элементы формы не найдены');
-            alert('Ошибка: не найдены поля формы');
-            return;
-        }
-
-        const username = usernameInput.value.trim();
-        const password = passwordInput.value.trim();
-
-        try {
-            const loginResponse = await fetch('/api/users/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    username: username,
-                    password: password
-                })
-            });
-
-            if (loginResponse.ok) {
-                logInBlock.style.display = 'none';
-                chatBlock.style.display = 'flex';
-                currentUserHeader.innerText= username;
-
-                currentUsername = username;
-            } else {
-                const errorData = await loginResponse.json();
-                alert(errorData.message);
+            if(!username || !password || !passwordSubmit) {
+                alert('Заполните все поля!');
+                return;
             }
-        } catch (err) {
-            console.error('Ошибка:', err);
-            alert(err.message);
-        }
-    })
+
+            if(password !== passwordSubmit) {
+                alert('Пароли должны совпадать!');
+                return;
+            }
+
+            if (username === 'Admin') {
+                alert('Имя Admin зарезервировано для администратора');
+                return;
+            }
+
+            try {
+                const registerResponse = await fetch('/api/users/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+
+                if (registerResponse.ok) {
+                    alert("Вы успешно зарегистрировались!");
+                    hideAuthForms();
+                    initChatWithUser(username, false);
+                } else {
+                    const errorData = await registerResponse.json();
+                    alert(errorData.message || errorData);
+                }
+            } catch (err) {
+                console.error('Ошибка:', err);
+                alert(err.message);
+            }
+        });
+    }
+
+    if (submitLogInBtn) {
+        submitLogInBtn.addEventListener('click', async (event) => {
+            event.preventDefault();
+
+            const usernameInput = document.querySelector(`#${loginBlockId} #username-input`);
+            const passwordInput = document.querySelector(`#${loginBlockId} #password-input`);
+
+            if(!usernameInput || !passwordInput) {
+                alert('Ошибка: не найдены поля формы');
+                return;
+            }
+
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            if(!username || !password) {
+                alert('Заполните все поля!');
+                return;
+            }
+
+            // Вход для админа
+            if (username === 'Admin') {
+                if (password === 'admin') {
+                    hideAuthForms();
+                    initChatWithUser('Admin', true);
+                } else {
+                    alert('Неверный пароль администратора');
+                }
+                return;
+            }
+
+            // Вход для обычного пользователя
+            try {
+                const loginResponse = await fetch('/api/users/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+
+                if (loginResponse.ok) {
+                    hideAuthForms();
+                    initChatWithUser(username, false);
+                } else {
+                    const errorData = await loginResponse.json();
+                    alert(errorData.message);
+                }
+            } catch (err) {
+                console.error('Ошибка:', err);
+                alert(err.message);
+            }
+        });
+    }
 }());
 
-export{
+export {
     currentUsername,
-}
+    isCurrentUserAdmin,
+    initChatWithUser
+};

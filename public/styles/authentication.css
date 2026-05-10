@@ -1,0 +1,32 @@
+#auth-btns-block h2 {
+    text-align: center;
+    margin-bottom: 35px;
+}
+
+#auth-btns{
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+}
+
+#log-in-block, #registration-block{
+    display: none;
+    border: 3px solid rgb(242, 215, 133);
+    border-radius: 15px;
+    padding: 3% 10% 6% 10%;
+    margin: 0 15%;
+}
+#auth-btns button{
+    width: auto;
+    padding: 10px 20px;
+    font-size: 16px;
+}
+
+#registration-block{
+    display: none;
+}
+
+.username-block, .password-block{
+    margin-bottom: 20px;
+    width: 100%;
+}
