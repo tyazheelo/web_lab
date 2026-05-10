@@ -8,10 +8,15 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const port = 3000;
-
 const httpServer = http.createServer(app);
 const io = new Server(httpServer);
+
+const PORT = process.env.PORT || 3000;
+
+httpServer.listen(PORT, () => {
+ console.log(`Server running on port ${port}`);
+ console.log(`Admin credentials: ${ADMIN_USERNAME} / ${ADMIN_PASSWORD}`);
+});
 
 const ADMIN_USERNAME = 'Admin';
 const ADMIN_PASSWORD = 'admin';
@@ -40,11 +45,6 @@ function addToPrivateChat(username, message) {
 function isAdmin(username) {
  return username === ADMIN_USERNAME;
 }
-
-httpServer.listen(port, () => {
- console.log(`Server running on port ${port}`);
- console.log(`Admin credentials: ${ADMIN_USERNAME} / ${ADMIN_PASSWORD}`);
-});
 
 io.on('connection', (socket) => {
  console.log('Client connected:', socket.id);
