@@ -8,6 +8,10 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// ===== КОНСТАНТЫ ДОЛЖНЫ БЫТЬ ОБЪЯВЛЕНЫ В НАЧАЛЕ =====
+const ADMIN_USERNAME = 'Admin';
+const ADMIN_PASSWORD = 'admin';
+
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, {
  cors: {
@@ -15,25 +19,16 @@ const io = new Server(httpServer, {
   methods: ["GET", "POST"],
   credentials: true
  },
- // ВАЖНО: Настройка путей для WebSocket
  path: '/socket.io/',
- transports: ['websocket', 'polling']  // Оставить оба
+ transports: ['websocket', 'polling']
 });
 
 const PORT = process.env.PORT || 3000;
 
-httpServer.listen(PORT, () => {
- console.log(`Server running on port ${PORT}`);
- console.log(`Admin credentials: ${ADMIN_USERNAME} / ${ADMIN_PASSWORD}`);
-});
-
-const ADMIN_USERNAME = 'Admin';
-const ADMIN_PASSWORD = 'admin';
-
-const users = new Map(); // socket.id -> { username, socketId, isAdmin }
-const userSockets = new Map(); // username -> socket.id
-
-const privateChats = new Map(); // username -> array of messages
+// Хранилище пользователей
+const users = new Map();
+const userSockets = new Map();
+const privateChats = new Map();
 const MAX_HISTORY = 50;
 
 function getPrivateChat(username) {
@@ -51,9 +46,11 @@ function addToPrivateChat(username, message) {
  }
 }
 
-function isAdmin(username) {
- return username === ADMIN_USERNAME;
-}
+// ===== ЗАПУСК СЕРВЕРА ПОСЛЕ ВСЕХ ОБЪЯВЛЕНИЙ =====
+httpServer.listen(PORT, () => {
+ console.log(`Server running on port ${PORT}`);
+ console.log(`Admin credentials: ${ADMIN_USERNAME} / ${ADMIN_PASSWORD}`);
+});
 
 io.on('connection', (socket) => {
  console.log('Client connected:', socket.id);
@@ -84,6 +81,7 @@ io.on('connection', (socket) => {
   userSockets.set(username, socket.id);
 
   console.log(`User registered: ${username} (isAdmin: ${isAdminUser})`);
+  console.log(`Total users online: ${userSockets.size}`);
 
   socket.emit('user:register:success', {
    username,
@@ -91,17 +89,12 @@ io.on('connection', (socket) => {
   });
 
   if (isAdminUser) {
-   const userList = Array.from(userSockets.keys()).filter(username => username !== ADMIN_USERNAME);
+   const userList = Array.from(userSockets.keys()).filter(u => u !== ADMIN_USERNAME);
+   console.log(`Admin user list: ${userList}`);
    socket.emit('admin:userList', userList);
-
-   for (const user of userList) {
-    const chat = getPrivateChat(user);
-    if (chat.length > 0) {
-     socket.emit('admin:chatHistory', { username: user, history: chat });
-    }
-   }
   } else {
    const chatHistory = getPrivateChat(username);
+   console.log(`User ${username} history: ${chatHistory.length} messages`);
    socket.emit('chat:history', chatHistory);
 
    if (userSockets.has(ADMIN_USERNAME)) {
@@ -111,10 +104,9 @@ io.on('connection', (socket) => {
     io.to(adminSocketId).emit('admin:newUser', username);
    }
   }
-
-  io.emit('user:joined', { username: username, isAdmin: isAdminUser });
  });
 
+ // Остальной код socket обработчиков...
  socket.on('chat:text', (data) => {
   const user = users.get(socket.id);
   if (!user) {
@@ -131,14 +123,14 @@ io.on('connection', (socket) => {
    }
 
    const recipientSocketId = userSockets.get(recipientUsername);
-
    const message = {
-    id: Date.now() + Math.random().toString(36),
+    id: Date.now() + Math.random().toString(36).substr(2, 6),
     type: 'text',
     sender: user.username,
     senderIsAdmin: true,
     content: content,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    read: false
    };
 
    addToPrivateChat(recipientUsername, message);
@@ -146,21 +138,19 @@ io.on('connection', (socket) => {
    if (recipientSocketId) {
     io.to(recipientSocketId).emit('chat:message', message);
    }
-
    socket.emit('chat:message', message);
-
   } else {
    const adminSocketId = userSockets.get(ADMIN_USERNAME);
-
    const message = {
     id: Date.now() + Math.random().toString(36).substr(2, 6),
     type: 'text',
     sender: user.username,
     senderIsAdmin: false,
     content: content,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    read: false
    };
-   
+
    addToPrivateChat(user.username, message);
 
    if (adminSocketId) {
@@ -170,7 +160,6 @@ io.on('connection', (socket) => {
     socket.emit('chat:error', 'Администратор не в сети');
     return;
    }
-
    socket.emit('chat:message', message);
   }
  });
@@ -205,7 +194,6 @@ io.on('connection', (socket) => {
    }
 
    const recipientSocketId = userSockets.get(recipientUsername);
-
    const message = {
     id: Date.now() + Math.random().toString(36).substr(2, 6),
     type: 'file',
@@ -214,7 +202,8 @@ io.on('connection', (socket) => {
     fileName: fileName,
     fileUrl: fileUrl,
     fileType: fileType,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    read: false
    };
 
    addToPrivateChat(recipientUsername, message);
@@ -222,12 +211,9 @@ io.on('connection', (socket) => {
    if (recipientSocketId) {
     io.to(recipientSocketId).emit('chat:message', message);
    }
-
    socket.emit('chat:message', message);
-
   } else {
    const adminSocketId = userSockets.get(ADMIN_USERNAME);
-
    const message = {
     id: Date.now() + Math.random().toString(36).substr(2, 6),
     type: 'file',
@@ -236,7 +222,8 @@ io.on('connection', (socket) => {
     fileName: fileName,
     fileUrl: fileUrl,
     fileType: fileType,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    read: false
    };
 
    addToPrivateChat(user.username, message);
@@ -248,20 +235,11 @@ io.on('connection', (socket) => {
     socket.emit('chat:error', 'Администратор не в сети');
     return;
    }
-
    socket.emit('chat:message', message);
   }
  });
 
  socket.on('admin:getChatHistory', (username) => {
-  const user = users.get(socket.id);
-  if (!user || !user.isAdmin) return;
-
-  const chatHistory = getPrivateChat(username);
-  socket.emit('admin:chatHistory', { username, history: chatHistory });
- });
-
- socket.on('admin:switchUser', (username) => {
   const user = users.get(socket.id);
   if (!user || !user.isAdmin) return;
 
@@ -275,8 +253,6 @@ io.on('connection', (socket) => {
    console.log(`User disconnected: ${user.username}`);
    users.delete(socket.id);
    userSockets.delete(user.username);
-
-   io.emit('user:left', { username: user.username, isAdmin: user.isAdmin });
 
    if (!user.isAdmin && userSockets.has(ADMIN_USERNAME)) {
     const adminSocketId = userSockets.get(ADMIN_USERNAME);

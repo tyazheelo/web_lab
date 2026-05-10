@@ -3,7 +3,7 @@ import { currentUsername, isCurrentUserAdmin } from "./authentication.js";
 let currentRecipient = null;
 let adminChats = new Map(); // Хранилище сообщений для каждого пользователя у админа
 
-const socketUrl = window.location.origin; 
+const socketUrl = window.location.origin;
 window.socket = io(socketUrl, {
     transports: ['websocket', 'polling'],
     path: '/socket.io/'
@@ -25,6 +25,19 @@ if (currentUsername) {
         currentUserNameSpan.style.color = '#e91e63';
     }
 }
+
+window.socket.on('connect', () => {
+    console.log('✅ Socket connected! ID:', window.socket.id);
+    // Если пользователь уже авторизован, регистрируем его заново
+    if (currentUsername) {
+        console.log('📤 Re-registering user:', currentUsername);
+        window.socket.emit('user:register', {
+            username: currentUsername,
+            password: isCurrentUserAdmin ? 'admin' : '',
+            isAdminLogin: isCurrentUserAdmin
+        });
+    }
+});
 
 window.socket.on('user:register:success', (data) => {
     console.log('Registered as:', data.username, 'isAdmin:', data.isAdmin);
