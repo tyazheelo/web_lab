@@ -351,13 +351,28 @@ function sendFiles(files) {
 
         const reader = new FileReader();
         reader.onload = (e) => {
-            const fileData = e.target.result.split(',')[1];
+            // Убедитесь, что данные получены правильно
+            const result = e.target.result;
+            const fileData = result.split(',')[1]; // Получаем base64 без префикса
+
+            if (!fileData) {
+                console.error('No file data');
+                alert('Ошибка чтения файла');
+                return;
+            }
+
+            console.log(`Sending file: ${file.name}, data length: ${fileData.length}`);
+
             window.socket.emit('chat:file', {
                 fileName: file.name,
                 fileData: fileData,
                 fileType: file.type,
                 recipientUsername: currentRecipient
             });
+        };
+        reader.onerror = (error) => {
+            console.error('FileReader error:', error);
+            alert('Ошибка при чтении файла');
         };
         reader.readAsDataURL(file);
     }
