@@ -6,8 +6,8 @@ let adminChats = new Map();
 const socketUrl = window.location.origin;
 
 window.socket = io(socketUrl, {
-    transports: ['polling', 'websocket'],
-    path: '/socket.io/'
+  transports: ['polling', 'websocket'],
+  path: '/socket.io/'
 });
 
 const toMainPage = document.getElementById('to-main-page');
@@ -21,112 +21,179 @@ const currentUserNameSpan = document.getElementById('current-name');
 const companionNameSpan = document.getElementById('companion-name');
 
 if (currentUsername) {
-    currentUserNameSpan.textContent = currentUsername;
+  currentUserNameSpan.textContent = currentUsername;
 
-    if (isCurrentUserAdmin) {
-        currentUserNameSpan.style.color = '#e91e63';
-    }
+  if (isCurrentUserAdmin) {
+    currentUserNameSpan.style.color = '#e91e63';
+  }
 }
 
 window.socket.on('connect', () => {
-    console.log('Socket connected:', window.socket.id);
+  console.log('Socket connected:', window.socket.id);
 
-    if (currentUsername) {
-        window.socket.emit('user:register', {
-            username: currentUsername,
-            password: isCurrentUserAdmin ? 'admin' : ''
-        });
-    }
+  if (currentUsername) {
+    window.socket.emit('user:register', {
+      username: currentUsername,
+      password: isCurrentUserAdmin ? 'admin' : ''
+    });
+  }
 });
 
 window.socket.on('user:register:success', (data) => {
-    console.log('Registered:', data.username);
+  console.log('Registered:', data.username);
 
-    if (!isCurrentUserAdmin) {
-        currentRecipient = 'Admin';
-        companionNameSpan.textContent = 'Чат с поддержкой';
-    }
+  if (!isCurrentUserAdmin) {
+    currentRecipient = 'Admin';
+    companionNameSpan.textContent = 'Чат с поддержкой';
+  }
 });
 
 window.socket.on('user:register:error', (error) => {
-    alert(error);
+  alert(error);
 });
 
 window.socket.on('chat:history', (history) => {
-    chatContainer.innerHTML = '';
+  if (isCurrentUserAdmin) return;
 
-    history.forEach(message => {
-        displayMessage(message);
-    });
+  chatContainer.innerHTML = '';
 
-    scrollToBottom();
+  history.forEach(message => {
+    displayMessage(message);
+  });
+
+  scrollToBottom();
 });
 
 window.socket.on('chat:message', (message) => {
+
+  if (isCurrentUserAdmin) {
+
+    const username =
+      message.sender === 'Admin'
+        ? message.recipient
+        : message.sender;
+
+    if (!adminChats.has(username)) {
+      adminChats.set(username, []);
+    }
+
+    adminChats.get(username).push(message);
+
+    if (currentRecipient === username) {
+      displayMessage(message);
+      scrollToBottom();
+    }
+
+  } else {
+
     displayMessage(message);
     scrollToBottom();
+  }
+});
+
+window.socket.on('admin:userList', updateAdminUserList);
+
+window.socket.on('admin:chatHistory', ({ username, history }) => {
+
+  adminChats.set(username, history);
+
+  if (currentRecipient === username) {
+
+    chatContainer.innerHTML = '';
+
+    history.forEach(message => {
+      displayMessage(message);
+    });
+
+    scrollToBottom();
+  }
 });
 
 function sendMessage() {
-    const content = messageInput.value.trim();
 
-    if (!content) return;
+  const content = messageInput.value.trim();
 
-    window.socket.emit('chat:text', {
-        content,
-        recipientUsername: currentRecipient
-    });
+  if (!content) return;
 
-    messageInput.value = '';
+  if (isCurrentUserAdmin && !currentRecipient) {
+    alert('Выберите пользователя');
+    return;
+  }
+
+  window.socket.emit('chat:text', {
+    content,
+    recipientUsername: currentRecipient
+  });
+
+  messageInput.value = '';
 }
 
 sendBtn.addEventListener('click', sendMessage);
 
 messageInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-        sendMessage();
-    }
+  if (event.key === 'Enter') {
+    sendMessage();
+  }
 });
 
 function displayMessage(message) {
-    const messageElement = document.createElement('div');
 
-    messageElement.classList.add('message');
+  const messageElement = document.createElement('div');
 
-    if (message.sender === currentUsername) {
-        messageElement.classList.add('my-message');
-    } else {
-        messageElement.classList.add('other-message');
-    }
+  messageElement.classList.add('message');
 
-    messageElement.innerHTML = `
-    <div class="message-author">${message.sender}</div>
-    <div class="message-content">${message.content}</div>
-  `;
+  if (message.sender === currentUsername) {
+    messageElement.classList.add('my-message');
+  } else {
+    messageElement.classList.add('other-message');
+  }
 
-    chatContainer.appendChild(messageElement);
+  messageElement.innerHTML = `
+<div class="message-author">${message.sender}</div>
+<div class="message-content">${message.content}</div>
+    `;
+
+  chatContainer.appendChild(messageElement);
 }
 
 function scrollToBottom() {
-    chatContainer.scrollTop = chatContainer.scrollHeight;
+  chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
 function updateAdminUserList(users) {
-    if (!isCurrentUserAdmin) return;
 
-    userListContainer.innerHTML = '';
+  if (!isCurrentUserAdmin) return;
 
-    users.forEach(username => {
-        const userItem = document.createElement('div');
+  userListContainer.innerHTML = '';
 
-        userItem.classList.add('user-item');
-        userItem.textContent = username;
+  users.forEach(username => {
 
-        userItem.addEventListener('click', () => {
-            currentRecipient = username;
-            companionNameSpan.textContent = username;
-        });
+    const userItem = document.createElement('div');
 
-        userListContainer.appendChild(userItem);
+    userItem.classList.add('user-item');
+    userItem.textContent = username;
+
+    userItem.addEventListener('click', () => {
+
+      currentRecipient = username;
+
+      companionNameSpan.textContent = username;
+
+      chatContainer.innerHTML = '';
+
+      const history = adminChats.get(username) || [];
+
+      history.forEach(message => {
+        displayMessage(message);
+      });
+
+      scrollToBottom();
     });
+
+    userListContainer.appendChild(userItem);
+  });
 }
+
+toMainPage?.addEventListener('click', () => {
+  window.location.href = '/';
+});
