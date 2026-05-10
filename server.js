@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ===== КОНСТАНТЫ ДОЛЖНЫ БЫТЬ ОБЪЯВЛЕНЫ В НАЧАЛЕ =====
+// ===== КОНСТАНТЫ =====
 const ADMIN_USERNAME = 'Admin';
 const ADMIN_PASSWORD = 'admin';
 
@@ -25,7 +25,7 @@ const io = new Server(httpServer, {
 
 const PORT = process.env.PORT || 3000;
 
-// Хранилище пользователей
+// Хранилище
 const users = new Map();
 const userSockets = new Map();
 const privateChats = new Map();
@@ -46,7 +46,6 @@ function addToPrivateChat(username, message) {
  }
 }
 
-// ===== ЗАПУСК СЕРВЕРА ПОСЛЕ ВСЕХ ОБЪЯВЛЕНИЙ =====
 httpServer.listen(PORT, () => {
  console.log(`Server running on port ${PORT}`);
  console.log(`Admin credentials: ${ADMIN_USERNAME} / ${ADMIN_PASSWORD}`);
@@ -56,45 +55,53 @@ io.on('connection', (socket) => {
  console.log('Client connected:', socket.id);
 
  socket.on('user:register', (data) => {
-  const { username, password, isAdminLogin } = data;
+  const { username, password } = data;
 
-  console.log(`Registration attempt: ${username}, isAdminLogin: ${isAdminLogin}`);
+  console.log(`Registration attempt: ${username}`);
 
-  if (username === ADMIN_USERNAME) {
-   if (password !== ADMIN_PASSWORD) {
-    socket.emit('user:register:error', 'Неверный пароль администратора');
-    return;
-   }
-   if (userSockets.has(username)) {
-    socket.emit('user:register:error', 'Администратор уже авторизован');
-    return;
-   }
-  } else {
-   if (userSockets.has(username)) {
-    socket.emit('user:register:error', 'Имя пользователя уже занято');
-    return;
-   }
+  // Проверка пароля для админа
+  if (username === ADMIN_USERNAME && password !== ADMIN_PASSWORD) {
+   socket.emit('user:register:error', 'Неверный пароль администратора');
+   return;
   }
 
+  // ЕСЛИ ПОЛЬЗОВАТЕЛЬ УЖЕ ЕСТЬ - ОБНОВЛЯЕМ ЕГО СОКЕТ
+  const existingSocketId = userSockets.get(username);
+  if (existingSocketId) {
+   console.log(`User ${username} already exists, updating socket`);
+   // Удаляем старую запись
+   users.delete(existingSocketId);
+   // Создаем новую
+   const isAdminUser = (username === ADMIN_USERNAME);
+   users.set(socket.id, { username, socketId: socket.id, isAdmin: isAdminUser });
+   userSockets.set(username, socket.id);
+
+   socket.emit('user:register:success', { username, isAdmin: isAdminUser });
+
+   // Обновляем список для админа
+   if (userSockets.has(ADMIN_USERNAME)) {
+    const adminSocketId = userSockets.get(ADMIN_USERNAME);
+    const userList = Array.from(userSockets.keys()).filter(u => u !== ADMIN_USERNAME);
+    io.to(adminSocketId).emit('admin:userList', userList);
+   }
+   return;
+  }
+
+  // НОВАЯ РЕГИСТРАЦИЯ
   const isAdminUser = (username === ADMIN_USERNAME);
   users.set(socket.id, { username, socketId: socket.id, isAdmin: isAdminUser });
   userSockets.set(username, socket.id);
 
-  console.log(`User registered: ${username} (isAdmin: ${isAdminUser})`);
-  console.log(`Total users online: ${userSockets.size}`);
+  console.log(`New user registered: ${username} (isAdmin: ${isAdminUser})`);
+  console.log(`Total users: ${userSockets.size}`);
 
-  socket.emit('user:register:success', {
-   username,
-   isAdmin: isAdminUser
-  });
+  socket.emit('user:register:success', { username, isAdmin: isAdminUser });
 
   if (isAdminUser) {
    const userList = Array.from(userSockets.keys()).filter(u => u !== ADMIN_USERNAME);
-   console.log(`Admin user list: ${userList}`);
    socket.emit('admin:userList', userList);
   } else {
    const chatHistory = getPrivateChat(username);
-   console.log(`User ${username} history: ${chatHistory.length} messages`);
    socket.emit('chat:history', chatHistory);
 
    if (userSockets.has(ADMIN_USERNAME)) {
@@ -106,7 +113,7 @@ io.on('connection', (socket) => {
   }
  });
 
- // Остальной код socket обработчиков...
+ // Обработка текстовых сообщений
  socket.on('chat:text', (data) => {
   const user = users.get(socket.id);
   if (!user) {
@@ -118,7 +125,7 @@ io.on('connection', (socket) => {
 
   if (user.isAdmin) {
    if (!recipientUsername) {
-    socket.emit('chat:error', 'Выберите пользователя для ответа');
+    socket.emit('chat:error', 'Выберите пользователя');
     return;
    }
 
@@ -164,6 +171,7 @@ io.on('connection', (socket) => {
   }
  });
 
+ // Обработка файлов
  socket.on('chat:file', (data) => {
   const user = users.get(socket.id);
   if (!user) {
@@ -184,12 +192,11 @@ io.on('connection', (socket) => {
   const filePath = path.join(uploadDir, uniqueFileName);
   const buffer = Buffer.from(fileData, 'base64');
   fs.writeFileSync(filePath, buffer);
-
   const fileUrl = `/uploads/${uniqueFileName}`;
 
   if (user.isAdmin) {
    if (!recipientUsername) {
-    socket.emit('chat:error', 'Выберите пользователя для отправки файла');
+    socket.emit('chat:error', 'Выберите пользователя');
     return;
    }
 
@@ -250,14 +257,18 @@ io.on('connection', (socket) => {
  socket.on('disconnect', () => {
   const user = users.get(socket.id);
   if (user) {
-   console.log(`User disconnected: ${user.username}`);
-   users.delete(socket.id);
-   userSockets.delete(user.username);
+   // Проверяем, что это действительно тот сокет
+   const currentSocketId = userSockets.get(user.username);
+   if (currentSocketId === socket.id) {
+    console.log(`User disconnected: ${user.username}`);
+    users.delete(socket.id);
+    userSockets.delete(user.username);
 
-   if (!user.isAdmin && userSockets.has(ADMIN_USERNAME)) {
-    const adminSocketId = userSockets.get(ADMIN_USERNAME);
-    const userList = Array.from(userSockets.keys()).filter(u => u !== ADMIN_USERNAME);
-    io.to(adminSocketId).emit('admin:userList', userList);
+    if (userSockets.has(ADMIN_USERNAME)) {
+     const adminSocketId = userSockets.get(ADMIN_USERNAME);
+     const userList = Array.from(userSockets.keys()).filter(u => u !== ADMIN_USERNAME);
+     io.to(adminSocketId).emit('admin:userList', userList);
+    }
    }
   }
  });
