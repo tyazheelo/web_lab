@@ -25,7 +25,7 @@ const io = new Server(httpServer, {
 
 const PORT = process.env.PORT || 3000;
 
-app.use('/uploads', express.static('public/uploads'));
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
 const users = new Map();
 const userSockets = new Map();

@@ -147,7 +147,7 @@ function displayMessage(message) {
   } else {
     messageElement.classList.add('other-message');
   }
-  
+
   const contentElement = document.createElement('div');
 
   contentElement.classList.add('message-content');
