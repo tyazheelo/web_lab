@@ -428,3 +428,57 @@ window.debugChat = () => {
     console.log('socket connected:', window.socket?.connected);
     console.log('adminChats:', Array.from(adminChats.keys()));
 };
+
+// В sendFiles добавьте проверку, что получатель существует
+function sendFiles(files) {
+    console.log('=== sendFiles ===');
+    console.log('isCurrentUserAdmin:', isCurrentUserAdmin);
+    console.log('currentRecipient:', currentRecipient);
+
+    // Для обычного пользователя, если recipient не выбран - отправляем админу
+    let targetRecipient = currentRecipient;
+    if (!isCurrentUserAdmin && !targetRecipient) {
+        targetRecipient = 'Admin';
+        console.log('No recipient, defaulting to Admin');
+    }
+
+    if (!targetRecipient) {
+        alert('Нет получателя');
+        return;
+    }
+
+    // Проверяем, что сокет подключен
+    if (!window.socket || !window.socket.connected) {
+        alert('Нет соединения с сервером');
+        return;
+    }
+
+    for (const file of files) {
+        if (file.size > 10 * 1024 * 1024) {
+            alert(`Файл ${file.name} слишком большой. Максимальный размер 10MB`);
+            continue;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const result = e.target.result;
+            const fileData = result.split(',')[1];
+            if (!fileData) {
+                alert('Ошибка чтения файла');
+                return;
+            }
+            console.log(`Sending file: ${file.name} to ${targetRecipient}`);
+            window.socket.emit('chat:file', {
+                fileName: file.name,
+                fileData: fileData,
+                fileType: file.type,
+                recipientUsername: targetRecipient
+            });
+        };
+        reader.onerror = (error) => {
+            console.error('FileReader error:', error);
+            alert('Ошибка при чтении файла');
+        };
+        reader.readAsDataURL(file);
+    }
+}
