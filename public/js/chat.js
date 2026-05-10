@@ -3,7 +3,11 @@ import { currentUsername, isCurrentUserAdmin } from "./authentication.js";
 let currentRecipient = null;
 let adminChats = new Map(); // Хранилище сообщений для каждого пользователя у админа
 
-window.socket = io();
+const socketUrl = window.location.origin; 
+window.socket = io(socketUrl, {
+    transports: ['websocket', 'polling'],
+    path: '/socket.io/'
+});
 
 const toMainPage = document.getElementById("to-main-page");
 const attachBtn = document.getElementById('attach-btn');

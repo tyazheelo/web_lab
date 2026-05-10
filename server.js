@@ -9,7 +9,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const httpServer = http.createServer(app);
-const io = new Server(httpServer);
+const io = new Server(httpServer, {
+ cors: {
+  origin: process.env.RENDER_EXTERNAL_URL || "http://localhost:3000",
+  methods: ["GET", "POST"],
+  credentials: true
+ },
+ // ВАЖНО: Настройка путей для WebSocket
+ path: '/socket.io/',
+ transports: ['websocket', 'polling']  // Оставить оба
+});
 
 const PORT = process.env.PORT || 3000;
 
