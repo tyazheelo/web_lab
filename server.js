@@ -26,9 +26,9 @@ const io = new Server(httpServer, {
 const PORT = process.env.PORT || 3000;
 
 // Хранилище
-const users = new Map(); // socket.id -> { username, socketId, isAdmin }
-const userSockets = new Map(); // username -> socket.id
-const privateChats = new Map(); // username -> array of messages
+const users = new Map();
+const userSockets = new Map();
+const privateChats = new Map();
 const MAX_HISTORY = 50;
 
 function getPrivateChat(username) {
@@ -65,26 +65,20 @@ io.on('connection', (socket) => {
    return;
   }
 
-  // ЕСЛИ ПОЛЬЗОВАТЕЛЬ УЖЕ ЕСТЬ - ОБНОВЛЯЕМ ЕГО СОКЕТ
+  // Если пользователь уже есть - обновляем сокет
   const existingSocketId = userSockets.get(username);
   if (existingSocketId) {
-   console.log(`User ${username} already exists, updating socket (old: ${existingSocketId}, new: ${socket.id})`);
-   // Удаляем старую запись
+   console.log(`User ${username} already exists, updating socket`);
    users.delete(existingSocketId);
-   // Создаем новую
    const isAdminUser = (username === ADMIN_USERNAME);
    users.set(socket.id, { username, socketId: socket.id, isAdmin: isAdminUser });
    userSockets.set(username, socket.id);
 
-   // Отправляем подтверждение
    socket.emit('user:register:success', { username, isAdmin: isAdminUser });
 
-   // Отправляем историю чата при переподключении
    if (isAdminUser) {
     const userList = Array.from(userSockets.keys()).filter(u => u !== ADMIN_USERNAME);
     socket.emit('admin:userList', userList);
-
-    // Отправляем все истории чатов админу
     for (const user of userList) {
      const chatHistory = getPrivateChat(user);
      if (chatHistory.length > 0) {
@@ -94,8 +88,6 @@ io.on('connection', (socket) => {
    } else {
     const chatHistory = getPrivateChat(username);
     socket.emit('chat:history', chatHistory);
-
-    // Уведомляем админа об обновлении
     if (userSockets.has(ADMIN_USERNAME)) {
      const adminSocketId = userSockets.get(ADMIN_USERNAME);
      const userList = Array.from(userSockets.keys()).filter(u => u !== ADMIN_USERNAME);
@@ -105,7 +97,7 @@ io.on('connection', (socket) => {
    return;
   }
 
-  // НОВАЯ РЕГИСТРАЦИЯ
+  // Новая регистрация
   const isAdminUser = (username === ADMIN_USERNAME);
   users.set(socket.id, { username, socketId: socket.id, isAdmin: isAdminUser });
   userSockets.set(username, socket.id);
@@ -144,7 +136,6 @@ io.on('connection', (socket) => {
   console.log(`Message from ${user.username} to ${recipientUsername || 'admin'}: ${content}`);
 
   if (user.isAdmin) {
-   // Админ пишет пользователю
    if (!recipientUsername) {
     socket.emit('chat:error', 'Выберите пользователя');
     return;
@@ -163,17 +154,11 @@ io.on('connection', (socket) => {
 
    addToPrivateChat(recipientUsername, message);
 
-   // Отправляем получателю, если он онлайн
    if (recipientSocketId) {
     io.to(recipientSocketId).emit('chat:message', message);
-    console.log(`Message sent to ${recipientUsername}`);
-   } else {
-    console.log(`User ${recipientUsername} is offline, message saved`);
    }
-   // Отправляем админу его же сообщение
    socket.emit('chat:message', message);
   } else {
-   // Пользователь пишет админу
    const adminSocketId = userSockets.get(ADMIN_USERNAME);
    const message = {
     id: Date.now() + Math.random().toString(36).substr(2, 6),
@@ -190,7 +175,6 @@ io.on('connection', (socket) => {
    if (adminSocketId) {
     io.to(adminSocketId).emit('chat:message', message);
     io.to(adminSocketId).emit('admin:newMessage', user.username);
-    console.log(`Message from ${user.username} sent to admin`);
    } else {
     socket.emit('chat:error', 'Администратор не в сети');
     return;
@@ -199,26 +183,33 @@ io.on('connection', (socket) => {
   }
  });
 
- // Обработка файлов - ИСПРАВЛЕНА
+ // Обработка файлов
  socket.on('chat:file', (data) => {
+  console.log('=== FILE RECEIVED ===');
+  console.log('Data:', {
+   fileName: data.fileName,
+   fileType: data.fileType,
+   recipientUsername: data.recipientUsername,
+   fileDataLength: data.fileData?.length
+  });
+
   const user = users.get(socket.id);
   if (!user) {
+   console.log('User not found!');
    socket.emit('chat:error', 'Вы не авторизованы');
    return;
   }
 
+  console.log(`User: ${user.username}, isAdmin: ${user.isAdmin}`);
+
   const { fileName, fileData, fileType, recipientUsername } = data;
 
-  console.log(`File from ${user.username}: ${fileName}, size: ${fileData?.length || 0}`);
-
-  // Проверяем наличие fileData
   if (!fileData) {
    socket.emit('chat:error', 'Ошибка: нет данных файла');
    return;
   }
 
   try {
-   // Сохраняем файл
    const fileExt = path.extname(fileName);
    const uniqueFileName = `${Date.now()}-${Math.random().toString(36).substr(2, 8)}${fileExt}`;
    const uploadDir = path.join(__dirname, 'public', 'uploads');
@@ -235,7 +226,6 @@ io.on('connection', (socket) => {
    console.log(`File saved: ${fileUrl}`);
 
    if (user.isAdmin) {
-    // Админ отправляет файл пользователю
     if (!recipientUsername) {
      socket.emit('chat:error', 'Выберите пользователя');
      return;
@@ -258,10 +248,12 @@ io.on('connection', (socket) => {
 
     if (recipientSocketId) {
      io.to(recipientSocketId).emit('chat:message', message);
+     console.log(`File sent to ${recipientUsername}`);
+    } else {
+     console.log(`User ${recipientUsername} offline, file saved`);
     }
     socket.emit('chat:message', message);
    } else {
-    // Пользователь отправляет файл админу
     const adminSocketId = userSockets.get(ADMIN_USERNAME);
     const message = {
      id: Date.now() + Math.random().toString(36).substr(2, 6),
@@ -280,6 +272,7 @@ io.on('connection', (socket) => {
     if (adminSocketId) {
      io.to(adminSocketId).emit('chat:message', message);
      io.to(adminSocketId).emit('admin:newMessage', user.username);
+     console.log(`File from ${user.username} sent to admin`);
     } else {
      socket.emit('chat:error', 'Администратор не в сети');
      return;

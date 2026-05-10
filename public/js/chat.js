@@ -1,7 +1,7 @@
 import { currentUsername, isCurrentUserAdmin } from "./authentication.js";
 
 let currentRecipient = null;
-let adminChats = new Map(); // Хранилище сообщений для каждого пользователя у админа
+let adminChats = new Map();
 
 const socketUrl = window.location.origin;
 window.socket = io(socketUrl, {
@@ -28,9 +28,8 @@ if (currentUsername) {
 
 window.socket.on('connect', () => {
     console.log('✅ Socket connected! ID:', window.socket.id);
-    // Если пользователь уже авторизован, регистрируем его заново
     if (currentUsername) {
-        console.log('📤 Re-registering user:', currentUsername);
+        console.log('📤 Registering user:', currentUsername);
         window.socket.emit('user:register', {
             username: currentUsername,
             password: isCurrentUserAdmin ? 'admin' : '',
@@ -40,7 +39,7 @@ window.socket.on('connect', () => {
 });
 
 window.socket.on('user:register:success', (data) => {
-    console.log('Registered as:', data.username, 'isAdmin:', data.isAdmin);
+    console.log('✅ Registered as:', data.username, 'isAdmin:', data.isAdmin);
     if (!isCurrentUserAdmin) {
         companionNameSpan.textContent = 'Чат с поддержкой';
         companionNameSpan.style.color = '#e91e63';
@@ -48,48 +47,44 @@ window.socket.on('user:register:success', (data) => {
 });
 
 window.socket.on('user:register:error', (error) => {
-    console.error('Registration error:', error);
+    console.error('❌ Registration error:', error);
     alert(error);
 });
 
 window.socket.on('chat:history', (history) => {
-    console.log('Received chat history:', history.length);
+    console.log('📜 Chat history:', history.length);
     chatContainer.innerHTML = '';
     history.forEach(message => displayMessage(message));
     scrollToBottom();
 });
 
 window.socket.on('admin:userList', (users) => {
-    console.log('Admin user list:', users);
+    console.log('👥 Admin user list:', users);
     updateAdminUserList(users);
 });
 
 window.socket.on('admin:newUser', (username) => {
-    console.log('New user joined:', username);
+    console.log('🆕 New user joined:', username);
     addUserToAdminList(username);
 });
 
 window.socket.on('admin:chatHistory', (data) => {
-    console.log('Admin chat history for:', data.username);
-
+    console.log('📜 Admin chat history for:', data.username);
     adminChats.set(data.username, data.history);
-
     if (currentRecipient === data.username) {
         displayChatHistory(data.history);
     }
 });
 
 window.socket.on('chat:message', (message) => {
-    console.log('New message from:', message.sender);
+    console.log('💬 New message from:', message.sender);
 
     if (isCurrentUserAdmin) {
         if (message.sender !== currentUsername) {
             const existingHistory = adminChats.get(message.sender) || [];
             existingHistory.push(message);
             adminChats.set(message.sender, existingHistory);
-
             highlightUserInList(message.sender);
-
             if (currentRecipient === message.sender) {
                 displayMessage(message);
                 scrollToBottom();
@@ -112,14 +107,11 @@ window.socket.on('chat:message', (message) => {
 });
 
 window.socket.on('user:joined', (data) => {
-    console.log('User joined:', data.username);
-    if (isCurrentUserAdmin && !data.isAdmin) {
-        window.socket.emit('admin:getUserList');
-    }
+    console.log('👋 User joined:', data.username);
 });
 
 window.socket.on('user:left', (data) => {
-    console.log('User left:', data.username);
+    console.log('👋 User left:', data.username);
     if (isCurrentUserAdmin && !data.isAdmin) {
         removeUserFromAdminList(data.username);
         adminChats.delete(data.username);
@@ -133,7 +125,7 @@ window.socket.on('user:left', (data) => {
 });
 
 window.socket.on('chat:error', (error) => {
-    console.error('Chat error:', error);
+    console.error('❌ Chat error:', error);
     alert(error);
 });
 
@@ -161,7 +153,6 @@ function displayMessage(message) {
             <div class="message-time">${formatTime(message.timestamp)}</div>
         `;
     }
-
     chatContainer.appendChild(messageDiv);
 }
 
@@ -180,14 +171,11 @@ function displayChatHistory(history) {
 
 function updateAdminUserList(users) {
     if (!userListContainer) return;
-
     userListContainer.innerHTML = '<h4>Пользователи онлайн:</h4>';
-
     if (users.length === 0) {
         userListContainer.innerHTML += '<div class="no-users">Нет пользователей онлайн</div>';
         return;
     }
-
     users.forEach(username => {
         const userDiv = createUserListItem(username);
         userListContainer.appendChild(userDiv);
@@ -198,12 +186,8 @@ function createUserListItem(username) {
     const userDiv = document.createElement('div');
     userDiv.className = `user-item ${currentRecipient === username ? 'user-item-active' : ''}`;
     userDiv.setAttribute('data-username', username);
-
     const chatHistory = adminChats.get(username) || [];
-    const unreadCount = chatHistory.filter(msg =>
-        msg.sender === username && !msg.read
-    ).length;
-
+    const unreadCount = chatHistory.filter(msg => msg.sender === username && !msg.read).length;
     userDiv.innerHTML = `
         ${escapeHtml(username)} 
         <span class="user-badge">пользователь</span>
@@ -215,45 +199,23 @@ function createUserListItem(username) {
 
 function addUserToAdminList(username) {
     if (!userListContainer) return;
-
     const existingUser = userListContainer.querySelector(`[data-username="${username}"]`);
     if (existingUser) return;
-
     const userDiv = createUserListItem(username);
     userListContainer.appendChild(userDiv);
 }
 
 function removeUserFromAdminList(username) {
     if (!userListContainer) return;
-
     const userElement = userListContainer.querySelector(`[data-username="${username}"]`);
-    if (userElement) {
-        userElement.remove();
-    }
+    if (userElement) userElement.remove();
 }
 
 function highlightUserInList(username) {
     if (!userListContainer) return;
-
     const userElement = userListContainer.querySelector(`[data-username="${username}"]`);
     if (userElement && currentRecipient !== username) {
         userElement.classList.add('user-item-highlight');
-
-        const unreadBadge = userElement.querySelector('.unread-badge');
-        const chatHistory = adminChats.get(username) || [];
-        const unreadCount = chatHistory.filter(msg => msg.sender === username).length;
-
-        if (unreadCount > 0) {
-            if (!unreadBadge) {
-                const badge = document.createElement('span');
-                badge.className = 'unread-badge';
-                badge.textContent = unreadCount;
-                userElement.appendChild(badge);
-            } else {
-                unreadBadge.textContent = unreadCount;
-            }
-        }
-
         setTimeout(() => {
             userElement.classList.remove('user-item-highlight');
         }, 2000);
@@ -261,40 +223,34 @@ function highlightUserInList(username) {
 }
 
 function showNotification(username) {
-    // Визуальное уведомление (можно добавить звук)
     const notification = document.createElement('div');
     notification.className = 'notification-toast';
     notification.innerHTML = `📨 Новое сообщение от ${escapeHtml(username)}`;
     document.body.appendChild(notification);
-
     setTimeout(() => {
         notification.classList.add('show');
         setTimeout(() => {
             notification.classList.remove('show');
-            setTimeout(() => {
-                notification.remove();
-            }, 300);
+            setTimeout(() => notification.remove(), 300);
         }, 2000);
     }, 100);
 }
 
 function selectUserForAdmin(username) {
+    console.log('=== selectUserForAdmin ===', username);
     if (currentRecipient === username) return;
-
     currentRecipient = username;
+    console.log('currentRecipient set to:', currentRecipient);
     companionNameSpan.textContent = `Чат с ${username}`;
     companionNameSpan.style.color = '#e91e63';
-
     const cachedHistory = adminChats.get(username);
     if (cachedHistory) {
         displayChatHistory(cachedHistory);
-
         markMessagesAsRead(username);
     } else {
         window.socket.emit('admin:getChatHistory', username);
         chatContainer.innerHTML = '<div class="message-system"><em>Загрузка истории...</em></div>';
     }
-
     document.querySelectorAll('.user-item').forEach(item => {
         const itemUsername = item.getAttribute('data-username');
         if (itemUsername === username) {
@@ -312,9 +268,7 @@ function markMessagesAsRead(username) {
     const history = adminChats.get(username);
     if (history) {
         history.forEach(msg => {
-            if (msg.sender === username) {
-                msg.read = true;
-            }
+            if (msg.sender === username) msg.read = true;
         });
         adminChats.set(username, history);
     }
@@ -322,14 +276,12 @@ function markMessagesAsRead(username) {
 
 function sendMessage() {
     const message = messageInput.value.trim();
-
     if (message === '') return;
-
     if (isCurrentUserAdmin && !currentRecipient) {
         alert('Выберите пользователя из списка для ответа');
         return;
     }
-
+    console.log('Sending message to:', currentRecipient);
     window.socket.emit('chat:text', {
         content: message,
         recipientUsername: currentRecipient
@@ -338,8 +290,12 @@ function sendMessage() {
 }
 
 function sendFiles(files) {
+    console.log('=== sendFiles ===');
+    console.log('isCurrentUserAdmin:', isCurrentUserAdmin);
+    console.log('currentRecipient:', currentRecipient);
+
     if (isCurrentUserAdmin && !currentRecipient) {
-        alert('Выберите пользователя из списка для отправки файла');
+        alert('Сначала выберите пользователя из списка!');
         return;
     }
 
@@ -351,18 +307,13 @@ function sendFiles(files) {
 
         const reader = new FileReader();
         reader.onload = (e) => {
-            // Убедитесь, что данные получены правильно
             const result = e.target.result;
-            const fileData = result.split(',')[1]; // Получаем base64 без префикса
-
+            const fileData = result.split(',')[1];
             if (!fileData) {
-                console.error('No file data');
                 alert('Ошибка чтения файла');
                 return;
             }
-
-            console.log(`Sending file: ${file.name}, data length: ${fileData.length}`);
-
+            console.log(`Sending file: ${file.name} to ${currentRecipient}`);
             window.socket.emit('chat:file', {
                 fileName: file.name,
                 fileData: fileData,
@@ -399,27 +350,22 @@ function scrollToBottom() {
     }
 }
 
-
+// Event listeners
 if (messageInput) {
     messageInput.addEventListener('dragover', (e) => {
         e.preventDefault();
         messageInput.style.borderColor = '#e91e63';
     });
-
     messageInput.addEventListener('dragleave', (e) => {
         e.preventDefault();
         messageInput.style.borderColor = '';
     });
-
     messageInput.addEventListener('drop', (e) => {
         e.preventDefault();
         messageInput.style.borderColor = '';
         const files = Array.from(e.dataTransfer.files);
-        if (files.length > 0) {
-            sendFiles(files);
-        }
+        if (files.length > 0) sendFiles(files);
     });
-
     messageInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -452,3 +398,13 @@ if (fileInput) {
 if (sendBtn) {
     sendBtn.addEventListener('click', sendMessage);
 }
+
+// Debug function
+window.debugChat = () => {
+    console.log('=== DEBUG ===');
+    console.log('currentUsername:', currentUsername);
+    console.log('isCurrentUserAdmin:', isCurrentUserAdmin);
+    console.log('currentRecipient:', currentRecipient);
+    console.log('socket connected:', window.socket?.connected);
+    console.log('adminChats:', Array.from(adminChats.keys()));
+};
