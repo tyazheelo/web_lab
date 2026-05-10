@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../styles/general.css">
     <link rel="stylesheet" href="../styles/chat.css">
+    <link rel="stylesheet" href="../styles/authentication.css">
     <title><%= title %>></title>
 </head>
 <body>
@@ -24,9 +25,12 @@
 <main>
     <div id="content-block">
         <div id="authorisation-block">
-            <div id="auth-btn">
-                <button id="log-in-btn" class="btn">Войти</button>
-                <button id="registration-btn" class="btn">Регистрация</button>
+            <div id="auth-btns-block">
+                <h2>Авторизация</h2>
+                <div id="auth-btns">
+                    <button id="log-in-btn" class="btn">Войти</button>
+                    <button id="registration-btn" class="btn">Регистрация</button>
+                </div>
             </div>
             <div id="log-in-block">
                 <form>
@@ -55,6 +59,7 @@
                     <div class="password-block">
                         <label>Пароль</label>
                         <input type="password" id="password-input">
+                        <label>Повторите пароль</label>
                         <input type="password" id="password-input-submit">
                     </div>
                     <div>

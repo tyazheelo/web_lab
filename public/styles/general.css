@@ -92,6 +92,7 @@ body button{
     font-weight: bold;
     border: 1px solid pink;
     border-radius: 15px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 
     cursor: pointer;
 }
