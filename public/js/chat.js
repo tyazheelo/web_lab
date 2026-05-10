@@ -147,11 +147,23 @@ function displayMessage(message) {
   } else {
     messageElement.classList.add('other-message');
   }
+  
+  const contentElement = document.createElement('div');
+
+  contentElement.classList.add('message-content');
+
+  if (message.type === 'file') {
+    contentElement.innerHTML = message.content;
+  } else {
+    contentElement.textContent = message.content;
+  }
 
   messageElement.innerHTML = `
-<div class="message-author">${message.sender}</div>
-<div class="message-content">${message.content}</div>
-    `;
+  <div class="message-author">${message.sender}</div>
+`;
+
+  messageElement.appendChild(contentElement);
+
 
   chatContainer.appendChild(messageElement);
 }
@@ -196,4 +208,63 @@ function updateAdminUserList(users) {
 
 toMainPage?.addEventListener('click', () => {
   window.location.href = '/';
+});
+
+attachBtn?.addEventListener('click', () => {
+  fileInput.click();
+});
+
+fileInput?.addEventListener('change', async () => {
+
+  const files = fileInput.files;
+
+  if (!files.length) return;
+
+  if (isCurrentUserAdmin && !currentRecipient) {
+    alert('Выберите пользователя');
+    return;
+  }
+
+  const formData = new FormData();
+
+  for (const file of files) {
+    formData.append('files', file);
+  }
+
+  formData.append('recipientUsername', currentRecipient);
+
+  try {
+
+    const response = await fetch('/upload', {
+      method: 'POST',
+      body: formData
+    });
+
+    const result = await response.json();
+
+    if (result.files) {
+
+      result.files.forEach(file => {
+
+        const message = {
+          sender: currentUsername,
+          recipient: currentRecipient,
+          content: `
+<a href="${file.url}" target="_blank">
+    ${file.originalName}
+</a>
+`,
+          type: 'file'
+        };
+
+        window.socket.emit('chat:file', message);
+      });
+    }
+
+  } catch (error) {
+    console.error(error);
+    alert('Ошибка загрузки файла');
+  }
+
+  fileInput.value = '';
 });
