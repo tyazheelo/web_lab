@@ -1,4 +1,4 @@
-import { getCurrentUsername, isAdmin, initChatWithUser } from './authentication.js';
+import { getCurrentUsername, isAdmin } from './authentication.js';
 
 let currentRecipient = null;
 let adminChats = new Map();
@@ -19,12 +19,6 @@ const chatContainer = document.getElementById('chat');
 const userListContainer = document.getElementById('user-list');
 const currentUserNameSpan = document.getElementById('current-name');
 const companionNameSpan = document.getElementById('companion-name');
-
-// Получаем текущего пользователя при необходимости через функцию
-const getAuthState = () => ({
-  username: getCurrentUsername(),
-  isAdmin: isAdmin()
-});
 
 if (getCurrentUsername()) {
   currentUserNameSpan.textContent = getCurrentUsername();
