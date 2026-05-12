@@ -173,6 +173,60 @@ io.on('connection', (socket) => {
   }
  });
 
+ socket.on('chat:file', (data) => {
+  const user = users.get(socket.id);
+
+  if (!user) {
+   socket.emit('chat:error', 'Вы не авторизованы');
+   return;
+  }
+
+  const { content, recipientUsername } = data;
+
+  if (user.isAdmin) {
+   if (!recipientUsername) {
+    socket.emit('chat:error', 'Выберите пользователя');
+    return;
+   }
+
+   const recipientSocketId = userSockets.get(recipientUsername);
+
+   const message = {
+    sender: user.username,
+    recipient: recipientUsername,
+    content,
+    createdAt: new Date().toISOString(),
+    type: 'file'
+   };
+
+   addToPrivateChat(recipientUsername, message);
+
+   socket.emit('chat:message', message);
+
+   if (recipientSocketId) {
+    io.to(recipientSocketId).emit('chat:message', message);
+   }
+  } else {
+   const adminSocketId = userSockets.get(ADMIN_USERNAME);
+
+   const message = {
+    sender: user.username,
+    recipient: ADMIN_USERNAME,
+    content,
+    createdAt: new Date().toISOString(),
+    type: 'file'
+   };
+
+   addToPrivateChat(user.username, message);
+
+   socket.emit('chat:message', message);
+
+   if (adminSocketId) {
+    io.to(adminSocketId).emit('chat:message', message);
+   }
+  }
+ });
+
  socket.on('disconnect', () => {
   const user = users.get(socket.id);
 

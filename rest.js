@@ -1,9 +1,14 @@
 import express from 'express'
 import bodyParser from 'body-parser'
+import multer from 'multer'
+import path from 'path'
+import { fileURLToPath } from 'node:url'
 import {getById, addToy, updateToy, deleteToyById, filename } from './js/toy-store.js';
 import {getAll} from './js/store.js';
 import {addUser, isPasswordCorrect} from './js/user-store.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -12,6 +17,26 @@ app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.set('view engine', 'ejs');
+
+const uploadDir = path.join(__dirname, 'public', 'uploads');
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const timestamp = Date.now();
+    const uniqueSuffix = Math.random().toString(36).substring(2, 10);
+    cb(null, `${timestamp}-${uniqueSuffix}${path.extname(file.originalname)}`);
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 50 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    cb(null, true);
+  }
+});
 
 app.get('/', (req, res) =>{
     try{
@@ -110,4 +135,21 @@ app.post('/api/users/login', async(req, res) => {
         res.status(401).json({success: false, message: error.message});
     }
 });
+
+app.post('/upload', upload.array('files'), (req, res) => {
+    if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ error: 'Нет файлов для загрузки' });
+    }
+
+    const files = req.files.map(file => ({
+        originalName: file.originalname,
+        filename: file.filename,
+        url: `/uploads/${file.filename}`,
+        size: file.size,
+        mimetype: file.mimetype
+    }));
+
+    res.json({ files });
+});
+
 export { app };

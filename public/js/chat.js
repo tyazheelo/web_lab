@@ -44,7 +44,7 @@ window.socket.on('user:register:success', (data) => {
 
   if (!isCurrentUserAdmin) {
     currentRecipient = 'Admin';
-    companionNameSpan.textContent = 'Чат с поддержкой';
+    companionNameSpan.textContent = 'Admin';
   }
 });
 
