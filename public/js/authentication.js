@@ -217,8 +217,16 @@ function hideAuthForms() {
     }
 }());
 
+function getCurrentUsername() {
+    return currentUsername;
+}
+
+function isAdmin() {
+    return isCurrentUserAdmin;
+}
+
 export {
-    currentUsername,
-    isCurrentUserAdmin,
+    getCurrentUsername,
+    isAdmin,
     initChatWithUser
 };

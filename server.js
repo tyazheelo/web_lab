@@ -176,12 +176,16 @@ io.on('connection', (socket) => {
  socket.on('chat:file', (data) => {
   const user = users.get(socket.id);
 
+  console.log('chat:file received from:', user?.username, 'data:', data);
+
   if (!user) {
    socket.emit('chat:error', 'Вы не авторизованы');
    return;
   }
 
   const { content, recipientUsername } = data;
+
+  console.log('Processing file - Admin:', user.isAdmin, 'Recipient:', recipientUsername);
 
   if (user.isAdmin) {
    if (!recipientUsername) {
@@ -198,6 +202,8 @@ io.on('connection', (socket) => {
     createdAt: new Date().toISOString(),
     type: 'file'
    };
+
+   console.log('Admin sending file to:', recipientUsername);
 
    addToPrivateChat(recipientUsername, message);
 
@@ -216,6 +222,8 @@ io.on('connection', (socket) => {
     createdAt: new Date().toISOString(),
     type: 'file'
    };
+
+   console.log('User sending file to admin');
 
    addToPrivateChat(user.username, message);
 

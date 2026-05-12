@@ -1,4 +1,4 @@
-import { currentUsername, isCurrentUserAdmin } from './authentication.js';
+import { getCurrentUsername, isAdmin, initChatWithUser } from './authentication.js';
 
 let currentRecipient = null;
 let adminChats = new Map();
@@ -20,10 +20,16 @@ const userListContainer = document.getElementById('user-list');
 const currentUserNameSpan = document.getElementById('current-name');
 const companionNameSpan = document.getElementById('companion-name');
 
-if (currentUsername) {
-  currentUserNameSpan.textContent = currentUsername;
+// Получаем текущего пользователя при необходимости через функцию
+const getAuthState = () => ({
+  username: getCurrentUsername(),
+  isAdmin: isAdmin()
+});
 
-  if (isCurrentUserAdmin) {
+if (getCurrentUsername()) {
+  currentUserNameSpan.textContent = getCurrentUsername();
+
+  if (isAdmin()) {
     currentUserNameSpan.style.color = '#e91e63';
   }
 }
@@ -31,10 +37,10 @@ if (currentUsername) {
 window.socket.on('connect', () => {
   console.log('Socket connected:', window.socket.id);
 
-  if (currentUsername) {
+  if (getCurrentUsername()) {
     window.socket.emit('user:register', {
-      username: currentUsername,
-      password: isCurrentUserAdmin ? 'admin' : ''
+      username: getCurrentUsername(),
+      password: isAdmin() ? 'admin' : ''
     });
   }
 });
@@ -42,7 +48,7 @@ window.socket.on('connect', () => {
 window.socket.on('user:register:success', (data) => {
   console.log('Registered:', data.username);
 
-  if (!isCurrentUserAdmin) {
+  if (!isAdmin()) {
     currentRecipient = 'Admin';
     companionNameSpan.textContent = 'Admin';
   }
@@ -53,7 +59,7 @@ window.socket.on('user:register:error', (error) => {
 });
 
 window.socket.on('chat:history', (history) => {
-  if (isCurrentUserAdmin) return;
+  if (isAdmin()) return;
 
   chatContainer.innerHTML = '';
 
@@ -66,7 +72,7 @@ window.socket.on('chat:history', (history) => {
 
 window.socket.on('chat:message', (message) => {
 
-  if (isCurrentUserAdmin) {
+  if (isAdmin()) {
 
     const username =
       message.sender === 'Admin'
@@ -91,7 +97,10 @@ window.socket.on('chat:message', (message) => {
   }
 });
 
-window.socket.on('admin:userList', updateAdminUserList);
+window.socket.on('admin:userList', (users) => {
+  if (!isAdmin()) return;
+  updateAdminUserList(users);
+});
 
 window.socket.on('admin:chatHistory', ({ username, history }) => {
 
@@ -142,7 +151,7 @@ function displayMessage(message) {
 
   messageElement.classList.add('message');
 
-  if (message.sender === currentUsername) {
+  if (message.sender === getCurrentUsername()) {
     messageElement.classList.add('my-message');
   } else {
     messageElement.classList.add('other-message');
@@ -174,7 +183,7 @@ function scrollToBottom() {
 
 function updateAdminUserList(users) {
 
-  if (!isCurrentUserAdmin) return;
+  if (!isAdmin()) return;
 
   userListContainer.innerHTML = '';
 
@@ -211,6 +220,12 @@ toMainPage?.addEventListener('click', () => {
 });
 
 attachBtn?.addEventListener('click', () => {
+  console.log('Attach button clicked - Admin:', isAdmin(), 'Recipient:', currentRecipient);
+  if (isAdmin() && !currentRecipient) {
+    console.warn('Admin tried to attach file without selecting recipient');
+    alert('Выберите пользователя из списка слева');
+    return;
+  }
   fileInput.click();
 });
 
@@ -220,15 +235,17 @@ fileInput?.addEventListener('change', async () => {
 
   if (!files.length) return;
 
+  console.log('Files selected:', files.length, 'Admin:', isCurrentUserAdmin, 'Recipient:', currentRecipient);
+
   // Проверка для админа
-  if (isCurrentUserAdmin && !currentRecipient) {
+  if (isAdmin() && !currentRecipient) {
     alert('Выберите пользователя');
     fileInput.value = '';
     return;
   }
 
   // Проверка для обычного пользователя
-  if (!isCurrentUserAdmin && !currentRecipient) {
+  if (!isAdmin() && !currentRecipient) {
     alert('Ошибка: нет подключения к чату. Перезагрузите страницу');
     fileInput.value = '';
     return;
@@ -237,26 +254,33 @@ fileInput?.addEventListener('change', async () => {
   const formData = new FormData();
 
   for (const file of files) {
+    console.log('Adding file:', file.name, file.size);
     formData.append('files', file);
   }
 
   formData.append('recipientUsername', currentRecipient);
 
   try {
-
+    console.log('Uploading files to /upload...');
     const response = await fetch('/upload', {
       method: 'POST',
       body: formData
     });
 
+    if (!response.ok) {
+      throw new Error(`Upload failed with status ${response.status}`);
+    }
+
     const result = await response.json();
+    console.log('Upload response:', result);
 
     if (result.files) {
 
       result.files.forEach(file => {
+        console.log('Emitting chat:file for:', file.originalName);
 
         const message = {
-          sender: currentUsername,
+          sender: getCurrentUsername(),
           recipient: currentRecipient,
           content: `
 <a href="${file.url}" target="_blank">
@@ -271,8 +295,8 @@ fileInput?.addEventListener('change', async () => {
     }
 
   } catch (error) {
-    console.error(error);
-    alert('Ошибка загрузки файла');
+    console.error('Error uploading files:', error);
+    alert('Ошибка загрузки файла: ' + error.message);
   }
 
   fileInput.value = '';

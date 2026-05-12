@@ -137,7 +137,12 @@ app.post('/api/users/login', async(req, res) => {
 });
 
 app.post('/upload', upload.array('files'), (req, res) => {
+    console.log('Upload request received');
+    console.log('Files:', req.files);
+    console.log('Body:', req.body);
+    
     if (!req.files || req.files.length === 0) {
+        console.log('No files provided');
         return res.status(400).json({ error: 'Нет файлов для загрузки' });
     }
 
@@ -149,6 +154,7 @@ app.post('/upload', upload.array('files'), (req, res) => {
         mimetype: file.mimetype
     }));
 
+    console.log('Files uploaded successfully:', files);
     res.json({ files });
 });
 
