@@ -281,6 +281,7 @@ fileInput?.addEventListener('change', async () => {
 
         const message = {
           sender: getCurrentUsername(),
+          recipientUsername: currentRecipient,
           recipient: currentRecipient,
           content: `
 <a href="${file.url}" target="_blank">
