@@ -124,7 +124,7 @@ function sendMessage() {
 
   if (!content) return;
 
-  if (isCurrentUserAdmin && !currentRecipient) {
+  if (isAdmin() && !currentRecipient) {
     alert('Выберите пользователя');
     return;
   }
@@ -235,7 +235,7 @@ fileInput?.addEventListener('change', async () => {
 
   if (!files.length) return;
 
-  console.log('Files selected:', files.length, 'Admin:', isCurrentUserAdmin, 'Recipient:', currentRecipient);
+  console.log('Files selected:', files.length, 'Admin:', isAdmin(), 'Recipient:', currentRecipient);
 
   // Проверка для админа
   if (isAdmin() && !currentRecipient) {
