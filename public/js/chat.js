@@ -220,8 +220,17 @@ fileInput?.addEventListener('change', async () => {
 
   if (!files.length) return;
 
+  // Проверка для админа
   if (isCurrentUserAdmin && !currentRecipient) {
     alert('Выберите пользователя');
+    fileInput.value = '';
+    return;
+  }
+
+  // Проверка для обычного пользователя
+  if (!isCurrentUserAdmin && !currentRecipient) {
+    alert('Ошибка: нет подключения к чату. Перезагрузите страницу');
+    fileInput.value = '';
     return;
   }
 
